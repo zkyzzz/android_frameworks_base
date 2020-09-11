@@ -48,6 +48,7 @@ import com.android.systemui.qs.logging.QSLogger;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
 import com.android.systemui.statusbar.policy.DataSaverController;
 import com.android.systemui.statusbar.policy.HotspotController;
+import com.android.systemui.statusbar.policy.KeyguardStateController;
 
 import javax.inject.Inject;
 
@@ -61,6 +62,9 @@ public class HotspotTile extends QSTileImpl<BooleanState> {
     public static final String TILE_SPEC = "hotspot";
     private final HotspotController mHotspotController;
     private final DataSaverController mDataSaverController;
+
+    private final ActivityStarter mActivityStarter;
+    private final KeyguardStateController mKeyguard;
 
     private final HotspotAndDataSaverCallbacks mCallbacks = new HotspotAndDataSaverCallbacks();
     private boolean mListening;
@@ -77,7 +81,8 @@ public class HotspotTile extends QSTileImpl<BooleanState> {
             ActivityStarter activityStarter,
             QSLogger qsLogger,
             HotspotController hotspotController,
-            DataSaverController dataSaverController
+            DataSaverController dataSaverController,
+            KeyguardStateController keyguardStateController
     ) {
         super(host, backgroundLooper, mainHandler, falsingManager, metricsLogger,
                 statusBarStateController, activityStarter, qsLogger);
@@ -86,6 +91,16 @@ public class HotspotTile extends QSTileImpl<BooleanState> {
         mHotspotController.observe(this, mCallbacks);
         mDataSaverController.observe(this, mCallbacks);
         mWifiManager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
+
+        mActivityStarter = activityStarter;
+        mKeyguard = keyguardStateController;
+        final KeyguardStateController.Callback callback = new KeyguardStateController.Callback() {
+            @Override
+            public void onKeyguardShowingChanged() {
+                refreshState();
+            }
+        };
+        mKeyguard.observe(this, callback);
     }
 
     @Override
@@ -118,8 +133,7 @@ public class HotspotTile extends QSTileImpl<BooleanState> {
         return new BooleanState();
     }
 
-    @Override
-    protected void handleClick(@Nullable View view) {
+    private void handleClickInner(@Nullable View view) {
         final boolean isEnabled = mState.value;
         if (!isEnabled && mDataSaverController.isDataSaverEnabled()) {
             return;
@@ -127,6 +141,18 @@ public class HotspotTile extends QSTileImpl<BooleanState> {
         // Immediately enter transient enabling state when turning hotspot on.
         refreshState(isEnabled ? null : ARG_SHOW_TRANSIENT_ENABLING);
         mHotspotController.setHotspotEnabled(!isEnabled);
+    }
+
+    @Override
+    protected void handleClick(@Nullable View view) {
+        if (mKeyguard.isMethodSecure() && mKeyguard.isShowing()) {
+            mActivityStarter.postQSRunnableDismissingKeyguard(() -> {
+                mHost.openPanels();
+                handleClickInner(view);
+            });
+            return;
+        }
+        handleClickInner(view);
     }
 
     @Override
