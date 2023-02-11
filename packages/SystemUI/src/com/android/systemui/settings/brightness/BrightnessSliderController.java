@@ -17,6 +17,9 @@
 package com.android.systemui.settings.brightness;
 
 import android.content.Context;
+import android.os.AsyncTask;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -35,6 +38,7 @@ import com.android.systemui.statusbar.policy.BrightnessMirrorController;
 import com.android.systemui.util.ViewController;
 
 import javax.inject.Inject;
+import java.time.Duration;
 
 /**
  * {@code ViewController} for a {@code BrightnessSliderView}
@@ -53,6 +57,9 @@ public class BrightnessSliderController extends ViewController<BrightnessSliderV
     private BrightnessMirrorController mMirrorController;
     private boolean mTracking;
     private final FalsingManager mFalsingManager;
+
+    private Context mContext;
+    private Duration hapticDuration = Duration.ofMillis(3);
 
     private final Gefingerpoken mOnInterceptListener = new Gefingerpoken() {
         @Override
@@ -85,6 +92,18 @@ public class BrightnessSliderController extends ViewController<BrightnessSliderV
         return mView;
     }
 
+
+    private void triggerVibration(Context context, boolean tracking) {
+    	Vibrator vibrator = context.getSystemService(Vibrator.class);
+        if (vibrator == null || !tracking) {
+            return;
+        }
+        AsyncTask.execute(
+                    () -> vibrator.vibrate(VibrationEffect.createOneShot(
+                hapticDuration.toMillis(),
+                VibrationEffect.EFFECT_TEXTURE_TICK)));
+        
+    }
 
     @Override
     protected void onViewAttached() {
@@ -220,6 +239,8 @@ public class BrightnessSliderController extends ViewController<BrightnessSliderV
             if (mListener != null) {
                 mListener.onChanged(mTracking, progress, false);
             }
+            mContext = mView.getContext();
+            triggerVibration(mContext, mTracking);
         }
 
         @Override
@@ -234,6 +255,9 @@ public class BrightnessSliderController extends ViewController<BrightnessSliderV
                 mMirrorController.showMirror();
                 mMirrorController.setLocationAndSize(mView);
             }
+            
+            mContext = mView.getContext();
+            triggerVibration(mContext, mTracking);
         }
 
         @Override
