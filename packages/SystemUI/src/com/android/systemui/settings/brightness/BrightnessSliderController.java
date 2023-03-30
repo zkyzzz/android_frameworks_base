@@ -38,7 +38,6 @@ import com.android.systemui.statusbar.policy.BrightnessMirrorController;
 import com.android.systemui.util.ViewController;
 
 import javax.inject.Inject;
-import java.time.Duration;
 
 /**
  * {@code ViewController} for a {@code BrightnessSliderView}
@@ -59,7 +58,6 @@ public class BrightnessSliderController extends ViewController<BrightnessSliderV
     private final FalsingManager mFalsingManager;
 
     private Context mContext;
-    private Duration hapticDuration = Duration.ofMillis(3);
 
     private final Gefingerpoken mOnInterceptListener = new Gefingerpoken() {
         @Override
@@ -99,10 +97,9 @@ public class BrightnessSliderController extends ViewController<BrightnessSliderV
             return;
         }
         AsyncTask.execute(
-                    () -> vibrator.vibrate(VibrationEffect.createOneShot(
-                hapticDuration.toMillis(),
-                VibrationEffect.EFFECT_TEXTURE_TICK)));
-        
+                    () -> vibrator.vibrate(VibrationEffect.createPredefined(
+                VibrationEffect.EFFECT_TICK)));
+
     }
 
     @Override
