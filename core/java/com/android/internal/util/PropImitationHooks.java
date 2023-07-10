@@ -57,6 +57,7 @@ public class PropImitationHooks {
     private static final String PACKAGE_ARCORE = "com.google.ar.core";
     private static final String PACKAGE_ASI = "com.google.android.as";
     private static final String PACKAGE_FINSKY = "com.android.vending";
+    private static final String PACKAGE_GBOARD = "com.google.android.inputmethod.latin";
     private static final String PACKAGE_GMS = "com.google.android.gms";
     private static final String PACKAGE_GPHOTOS = "com.google.android.apps.photos";
     private static final String PACKAGE_NETFLIX = "com.netflix.mediaclient";
@@ -67,6 +68,15 @@ public class PropImitationHooks {
 
     private static final ComponentName GMS_ADD_ACCOUNT_ACTIVITY = ComponentName.unflattenFromString(
             "com.google.android.gms/.auth.uiflows.minutemaid.MinuteMaidActivity");
+
+    private static final Map<String, Object> sPixel7Props = Map.of(
+        "BRAND", "google",
+        "MANUFACTURER", "Google",
+        "DEVICE", "cheetah",
+        "PRODUCT", "cheetah",
+        "MODEL", "Pixel 7 Pro",
+        "FINGERPRINT", "google/cheetah/cheetah:13/TQ3A.230705.001/10216780:user/release-keys"
+    );
 
     private static final Map<String, Object> sPixelProps = Map.of(
         "BRAND", "google",
@@ -116,7 +126,8 @@ public class PropImitationHooks {
 
         /* Set certified properties for GMSCore
          * Set stock fingerprint for ARCore
-         * Set Pixel 5 for Google, ASI and GMS device configurator
+         * Set Pixel 7 Pro for, Google, ASI and GBoard
+         * Set Pixel 5 for GMS device configurator
          * Set Pixel XL for Google Photos
          * Set custom model for Netflix
          */
@@ -127,8 +138,11 @@ public class PropImitationHooks {
             setPropValue("FINGERPRINT", sStockFp);
         } else if (sSpoofGapps && (packageName.equals(PACKAGE_VELVET)
                 || packageName.equals(PACKAGE_ASI)
-                || (packageName.equals(PACKAGE_GMS)
-                    && processName.equals(PROCESS_GMS_PERSISTENT)))) {
+                || packageName.equals(PACKAGE_GBOARD))) {
+            dlog("Spoofing Pixel 7 Pro for: " + packageName + " process: " + processName);
+            sPixel7Props.forEach(PropImitationHooks::setPropValue);
+        } else if (sSpoofGapps && (packageName.equals(PACKAGE_GMS)
+                    && processName.equals(PROCESS_GMS_PERSISTENT))) {
             dlog("Spoofing Pixel 5 for: " + packageName + " process: " + processName);
             sPixelProps.forEach(PropImitationHooks::setPropValue);
         } else if (sIsPhotos) {
