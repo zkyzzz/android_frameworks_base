@@ -20,6 +20,7 @@ import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_MOBI
 import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_MOBILE_NEW;
 import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_WIFI;
 import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_WIFI_NEW;
+import static com.android.systemui.statusbar.phone.StatusBarIconHolder.TYPE_NETWORK_TRAFFIC;
 
 import android.annotation.Nullable;
 import android.content.Context;
