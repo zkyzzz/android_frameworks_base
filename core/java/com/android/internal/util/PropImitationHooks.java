@@ -52,8 +52,8 @@ public class PropImitationHooks {
     
     private static final String PRODUCT_DEVICE = "ro.product.device";
 
-    private static final String sP7PFp = "google/cheetah/cheetah:13/TQ3A.230705.001/10216780:user/release-keys";
-    private static final String sFelixFp = "google/felix/felix:13/TQ3C.230805.001.A4/10354937:user/release-keys";
+    private static final String sP7PFp = "google/cheetah/cheetah:13/TQ3A.230901.001.C2/10753682:user/release-keys";
+    private static final String sFelixFp = "google/felix/felix:13/TQ3C.230901.001.B1/10750989:user/release-keys";
     private static final String sStockFp = SystemProperties.get("ro.vendor.build.fingerprint");
 
     private static final String PACKAGE_ARCORE = "com.google.ar.core";
@@ -86,6 +86,7 @@ public class PropImitationHooks {
 
     private static final Map<String, Object> sP7Props = createGoogleSpoofProps("cheetah", "Pixel 7 Pro", sP7PFp);
     private static final Map<String, Object> sPFoldProps = createGoogleSpoofProps("felix", "Pixel Fold", sFelixFp);
+    private static final Map<String, Object> sPTabletProps = createGoogleSpoofProps("tangorpro", "Pixel Tablet", "google/tangorpro/tangorpro:13/TQ3A.230901.001.B1/10750577:user/release-keys");
     private static final Map<String, Object> gPhotosProps = createGoogleSpoofProps("marlin", "Pixel XL", "google/marlin/marlin:10/QP1A.191005.007.A3/5972272:user/release-keys");
     private static final Map<String, Object> redfinProps = createGoogleSpoofProps("redfin", "Pixel 5", "google/redfin/redfin:13/TQ3A.230605.011/10161073:user/release-keys");
     private static final Map<String, Object> asusROG1Props = createGameProps("ASUS_Z01QD", "Asus");
@@ -199,13 +200,18 @@ public class PropImitationHooks {
         boolean sIsAtraceCoreService = packageName.equals(PACKAGE_GMS) 
             && (processName.equals(PROCESS_GMS_PERSISTENT) || processName.equals(PROCESS_GMS_UI));
 
-        if (sIsGms) {
+        if (packageName.equals(PACKAGE_GMS)) {
             dlog("Setting Pixel 2 fingerprint for: " + packageName);
-            setCertifiedPropsForGms();
+            setCertifiedPropsForGms(sIsGms);
         } else if (sIsAtraceCoreService){
             dlog("Spoofing as Pixel Fold for: " + packageName);
             sPFoldProps.forEach((k, v) -> setPropValue(k, v));
+        } else if (packageName.toLowerCase().contains("aiai") && packageName.toLowerCase().contains("google")
+            || processName.toLowerCase().contains("aiai") && processName.toLowerCase().contains("google")) {
+            dlog("Spoofing as Pixel Tablet for: " + packageName);
+            sPTabletProps.forEach((k, v) -> setPropValue(k, v));
         } else {
+            setVersionFieldString("SECURITY_PATCH", "2023-09-01");
             switch (packageName) {
                 case PACKAGE_ARCORE:
                     dlog("Setting stock fingerprint for: " + packageName);
@@ -222,25 +228,26 @@ public class PropImitationHooks {
                     }
                     break;
                 case PACKAGE_SUBSCRIPTION_RED:
+                case PACKAGE_SETUPWIZARD:
+                case PACKAGE_TURBO:
                     dlog("Spoofing as Pixel 7 Pro for: " + packageName);
                     sP7Props.forEach((k, v) -> setPropValue(k, v));
                     break;
-                case PACKAGE_AIAI:
-                case PACKAGE_ASI:
-                case PACKAGE_GMS:
-                case PACKAGE_COMPUTE_SERVICES:
-                case PACKAGE_FINSKY:
-                case PACKAGE_SETIINGS_INTELLIGENCE:
                 case PACKAGE_GASSIST:
                 case PACKAGE_GBOARD:
-                case PACKAGE_CINEMATIC_PHOTOS:
-                case PACKAGE_GOOGLE_WALLPAPERS:
-                case PACKAGE_EMOJI_WALLPAPER:
-                case PACKAGE_SETUPWIZARD:
-                case PACKAGE_TURBO:
                 case PACKAGE_VELVET:
                     dlog("Spoofing as Pixel Fold for: " + packageName);
                     sPFoldProps.forEach((k, v) -> setPropValue(k, v));
+                    break;
+                case PACKAGE_AIAI:
+                case PACKAGE_ASI:
+                case PACKAGE_COMPUTE_SERVICES:
+                case PACKAGE_SETIINGS_INTELLIGENCE:
+                case PACKAGE_CINEMATIC_PHOTOS:
+                case PACKAGE_GOOGLE_WALLPAPERS:
+                case PACKAGE_EMOJI_WALLPAPER:
+                    dlog("Spoofing as Pixel Tablet for: " + packageName);
+                    sPTabletProps.forEach((k, v) -> setPropValue(k, v));
                     break;
                 case PACKAGE_GPHOTOS:
                     if (SystemProperties.getBoolean("persist.sys.pixelprops.gphotos", false)) {
@@ -282,7 +289,7 @@ public class PropImitationHooks {
         }
     }
 
-    private static void setCertifiedPropsForGms() {
+    private static void setCertifiedPropsForGms(boolean isGms) {
         final boolean was = isGmsAddAccountActivityOnTop();
         final TaskStackListener taskStackListener = new TaskStackListener() {
             @Override
@@ -297,7 +304,11 @@ public class PropImitationHooks {
         };
         if (!was) {
             dlog("Spoofing build for GMS");
-            spoofBuildGms();
+            if (isGms) {
+                spoofBuildGms();
+            } else {
+                sPTabletProps.forEach((k, v) -> setPropValue(k, v));
+            }
         } else {
             dlog("Skip spoofing build for GMS, because GmsAddAccountActivityOnTop");
         }
